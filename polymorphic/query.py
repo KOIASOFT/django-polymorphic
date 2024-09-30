@@ -390,7 +390,8 @@ class PolymorphicQuerySet(QuerySet):
                     idlist_per_model[real_concrete_class].append(getattr(base_object, pk_name))
                     indexlist_per_model[real_concrete_class].append((i, len(resultlist)))
                     resultlist.append(None)
-
+        annotate_names = list(self.query.annotations.keys()
+                          if self.query.annotation_select_mask is None else self.query.annotation_select_mask)
         # For each model in "idlist_per_model" request its objects (the real model)
         # from the db and store them in results[].
         # Then we copy the annotate fields from the base objects to the real objects.
@@ -455,7 +456,7 @@ class PolymorphicQuerySet(QuerySet):
                     real_object = transmogrify(real_class, real_object)
 
                 if self.query.annotations:
-                    for anno_field_name in self.query.annotations.keys():
+                    for anno_field_name in annotate_names:
                         attr = getattr(base_object, anno_field_name)
                         setattr(real_object, anno_field_name, attr)
 
@@ -470,8 +471,6 @@ class PolymorphicQuerySet(QuerySet):
 
         # set polymorphic_annotate_names in all objects (currently just used for debugging/printing)
         if self.query.annotations:
-            # get annotate field list
-            annotate_names = list(self.query.annotations.keys())
             for real_object in resultlist:
                 real_object.polymorphic_annotate_names = annotate_names
 
